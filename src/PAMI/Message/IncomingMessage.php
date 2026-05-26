@@ -155,6 +155,15 @@ abstract class IncomingMessage extends Message
                 unset($content[0]);
                 $value = isset($content[1]) ? trim(implode(':', $content)) : '';
                 $this->channelVariables[$chanName][$name] = $value;
+            } elseif ($name === 'output') {
+                // Multiple Output: lines (e.g. Command action responses in
+                // Asterisk 13+). Accumulate them separated by newlines.
+                $existing = $this->getKey('output');
+                if ($existing !== null) {
+                    $this->setKey($name, $existing . "\n" . $value);
+                } else {
+                    $this->setKey($name, $value);
+                }
             } else {
                 $this->setKey($name, $value);
             }

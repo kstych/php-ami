@@ -173,5 +173,37 @@ class ResponseMessage extends IncomingMessage
         $this->events = array();
         $this->eventsCount = 0;
         $this->completed = !$this->isList();
+        // In Asterisk 13+, Command responses are self-contained with inline
+        // Output: lines. They use "Command output follows" as the Message but
+        // do NOT send follow-up events, so mark them as complete immediately.
+        if (!$this->completed && $this->isCommandResponse()) {
+            $this->completed = true;
+        }
+    }
+
+    /**
+     * Returns true if this is a Command action response with inline output
+     * (Asterisk 13+ format). These responses contain "Command output follows"
+     * in the Message header but are self-contained (no follow-up events).
+     *
+     * @return boolean
+     */
+    private function isCommandResponse()
+    {
+        return stristr($this->getMessage(), 'Command output follows') !== false;
+    }
+
+    /**
+     * Returns the output lines from a Command action response as an array.
+     *
+     * @return string[]
+     */
+    public function getCommandOutput()
+    {
+        $output = $this->getKey('output');
+        if ($output === null) {
+            return array();
+        }
+        return explode("\n", $output);
     }
 }
